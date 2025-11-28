@@ -33,7 +33,7 @@ def fft(signal):
         # recursive calls on even/odd indexed samples
         even = fft(signal[::2])
         odd = fft(signal[1::2])
-        # phase coefficients W_N^k for k = 0..N/2-1
+        # twiddle factors W_N^k for k = 0..N/2-1
         W = np.exp(-2j * np.pi * np.arange(N // 2) / N)
         first_half = even + W * odd
         second_half = even - W * odd
@@ -82,16 +82,22 @@ def ifft_2d(image):
 # Mode 1: Fast Mode
 def run_fast_mode(image_path):
     img = pad_image(image_path)
+    copy_img = pad_image(image_path) # For comparing to built-in fft
     fft_img = fft_2d(img)
 
     img = plt.imread(image_path).astype(float)
-    plt.subplot(1, 2, 1)
+    plt.subplot(1, 3, 1)
     plt.title("Original img")
     plt.imshow(img, cmap='gray')
 
-    plt.subplot(1, 2, 2)
+    plt.subplot(1, 3, 2)
     plt.title("fft of img")
     plt.imshow(np.abs(fft_img), norm=colors.LogNorm(), cmap='gray')
+
+    plt.subplot(1, 3, 3)
+    plt.title("fft of img (built-in)")
+    plt.imshow(np.abs(np.fft.fft2(copy_img)), norm=colors.LogNorm(), cmap='gray')
+
     plt.show()
 
 # Mode 2: Denoise
@@ -170,7 +176,7 @@ def compress(fft_img, ratio, height, width): # Helper used multiple times by run
 # Mode 4: Plot Runtime
 def run_plot_runtime():
     # Benchmark naive_dft vs fft for increasing sizes. Print mean and variance and plot them.
-    sizes = [32, 64, 128, 256, 512, 1024]
+    sizes = [128, 256, 512, 1024, 2048, 4096, 8192]
 
     fft_means = []
     fft_vars = []
@@ -198,14 +204,13 @@ def run_plot_runtime():
 
             # Time Naive DFT (we should only run this for small N, or it can take forever)
             # Naive 1024 can be really slow...
-            if N <= 1024:
-                x = np.random.random(N)
-                t0 = time.perf_counter()
-                _ = naive_dft(x)
-                t1 = time.perf_counter()
-                dft_times.append(t1 - t0)
-            else:
-                dft_times.append(0)  # in case we skip large N
+
+            x = np.random.random(N)
+            t0 = time.perf_counter()
+            naive_dft(x)
+            t1 = time.perf_counter()
+            dft_times.append(t1 - t0)
+
 
         fft_means.append(np.mean(fft_times))
         fft_vars.append(np.var(fft_times))
@@ -214,6 +219,7 @@ def run_plot_runtime():
         dft_vars.append(np.var(dft_times))
 
         print(f'Size {N}: FFT mean {fft_means[-1]:.6f}s | DFT mean {dft_means[-1]:.6f}s')
+        print(f'\t   FFT variance {math.sqrt(fft_vars[-1]):.6f} | DFT variance {math.sqrt(dft_vars[-1]):.6f}')
 
     # Plot means with error bars
     # "twice the standard deviation" for 95-97% confidence
@@ -224,7 +230,7 @@ def run_plot_runtime():
     plt.errorbar(sizes, fft_means, yerr=fft_std, label='FFT', marker='o', capsize=5)
     plt.errorbar(sizes, dft_means, yerr=dft_std, label='Naive DFT', marker='o', capsize=5)
 
-    plt.xscale('log', base=2)
+    plt.xscale('log', base=2) # TODO validate the base
     plt.yscale('log')
     plt.xlabel('Signal size N (log scale)')
     plt.ylabel('Time (s, log scale)')
@@ -233,7 +239,7 @@ def run_plot_runtime():
     plt.grid(True, which="both", ls="-")
     plt.show()
 
-# Helper function for
+# Helper function that pads image to prevent error
 def pad_image(image):
     img = Image.open(image).convert('L')
     img_array = np.asarray(img)
@@ -248,6 +254,7 @@ def pad_image(image):
     return new_img
 
 
+# Move script execution into a main guard so importing is side-effect free
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='FFT Assignment')
     parser.add_argument('-m', '--mode', type=int, default=1,
@@ -268,4 +275,4 @@ if __name__ == '__main__':
         run_compress(image_path)
     elif mode == 4:
         run_plot_runtime()
-    print('Running mode {} on image {}'.format(mode, image_path))
+
