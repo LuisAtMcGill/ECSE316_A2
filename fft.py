@@ -33,7 +33,7 @@ def fft(signal):
         # recursive calls on even/odd indexed samples
         even = fft(signal[::2])
         odd = fft(signal[1::2])
-        # twiddle factors W_N^k for k = 0..N/2-1
+        # phase coefficients W_N^k for k = 0..N/2-1
         W = np.exp(-2j * np.pi * np.arange(N // 2) / N)
         first_half = even + W * odd
         second_half = even - W * odd
@@ -224,7 +224,7 @@ def run_plot_runtime():
     plt.errorbar(sizes, fft_means, yerr=fft_std, label='FFT', marker='o', capsize=5)
     plt.errorbar(sizes, dft_means, yerr=dft_std, label='Naive DFT', marker='o', capsize=5)
 
-    plt.xscale('log', base=2) # TODO validate the base
+    plt.xscale('log', base=2)
     plt.yscale('log')
     plt.xlabel('Signal size N (log scale)')
     plt.ylabel('Time (s, log scale)')
