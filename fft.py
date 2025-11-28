@@ -248,7 +248,6 @@ def pad_image(image):
     return new_img
 
 
-# Move script execution into a main guard so importing is side-effect free
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='FFT Assignment')
     parser.add_argument('-m', '--mode', type=int, default=1,
