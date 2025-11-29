@@ -108,7 +108,7 @@ def run_denoise(image_path):
     fft_img = fft_2d(padded_img)
 
     # Filter high frequencies
-    freq_filter = 0.15
+    freq_filter = 0.2
     filtered_fft_img = fft_img.copy()
     width, height = fft_img.shape
 
@@ -128,7 +128,7 @@ def run_denoise(image_path):
     plt.imshow(img, cmap='gray')
 
     plt.subplot(1, 2, 2)
-    plt.title("Filtered img")
+    plt.title(f"Filtered img : {freq_filter}")
     plt.imshow(inverse_fft_img[:img.shape[0], :img.shape[1]], cmap='gray')
     plt.show()
 
@@ -141,7 +141,7 @@ def run_compress(image_path):
     fft_img = fft_2d(padded_img)
 
     # Prepare six compression levels (percentiles)
-    percentiles = [0, 75, 90, 95, 99, 99.9]
+    percentiles = [0, 50, 75, 90, 99, 99.9]
     comp_images = []
 
     for p in percentiles:
@@ -158,7 +158,8 @@ def run_compress(image_path):
     plt.tight_layout()
     plt.show()
 
-def compress(fft_img, ratio, height, width): # Helper used multiple times by run_compress. Compresses img and returns it
+# Helper used multiple times by run_compress. It zeroes out frequencies above a threshold
+def compress(fft_img, ratio, height, width):
     comp_img = fft_img.copy()
     if ratio <= 0:
         threshold = -1
@@ -219,7 +220,7 @@ def run_plot_runtime():
         dft_vars.append(np.var(dft_times))
 
         print(f'Size {N}: FFT mean {fft_means[-1]:.6f}s | DFT mean {dft_means[-1]:.6f}s')
-        print(f'\t   FFT variance {math.sqrt(fft_vars[-1]):.6f} | DFT variance {math.sqrt(dft_vars[-1]):.6f}')
+        print(f'\t   FFT std. dev {math.sqrt(fft_vars[-1]):.6f} | DFT std. dev {math.sqrt(dft_vars[-1]):.6f}')
 
     # Plot means with error bars
     # "twice the standard deviation" for 95-97% confidence
@@ -230,7 +231,7 @@ def run_plot_runtime():
     plt.errorbar(sizes, fft_means, yerr=fft_std, label='FFT', marker='o', capsize=5)
     plt.errorbar(sizes, dft_means, yerr=dft_std, label='Naive DFT', marker='o', capsize=5)
 
-    plt.xscale('log', base=2) # TODO validate the base
+    plt.xscale('log', base=2)
     plt.yscale('log')
     plt.xlabel('Signal size N (log scale)')
     plt.ylabel('Time (s, log scale)')
